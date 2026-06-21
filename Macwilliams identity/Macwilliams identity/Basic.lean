@@ -105,21 +105,19 @@ lemma pow_add_eq_pow_mul_pow_zmod_two (A B : ZMod 2) :
      · -- 1 + 1 = 0 στο ZMod 2
       change (-1 : ℚ) ^ 0 = (-1 : ℚ) ^ 1 * (-1 : ℚ) ^ 1; norm_num
 
-/-- Generalizes the exponentiation rule for `-1` over a `Finset` sum. -/
+/- Generalizes the exponentiation rule for `-1` over a `Finset` sum (-1)^(Σ a_i) = Π (-1)^(a_i)-/
 lemma pow_sum_eq_prod_pow (y z : Word (ZMod 2) n) (s : Finset (Fin n)) :
     (-1 : ℚ) ^ ZMod.val (∑ i ∈ s, z i * y i) = ∏ i ∈ s, (-1 : ℚ) ^ ZMod.val (z i * y i) := by
   induction s using Finset.induction_on
   · simp only [Finset.sum_empty, ZMod.val_zero, pow_zero, Finset.prod_empty]
   · rename_i a_elem s_set ha_not_in ih_hyp
-    rw [Finset.sum_insert ha_not_in, Finset.prod_insert ha_not_in]
-    rw [pow_add_eq_pow_mul_pow_zmod_two (z a_elem * y a_elem) (∑ i ∈ s_set, z i * y i)]
-    rw [ih_hyp]
+    rw [Finset.sum_insert ha_not_in, Finset.prod_insert ha_not_in,
+    pow_add_eq_pow_mul_pow_zmod_two (z a_elem * y a_elem) (∑ i ∈ s_set, z i * y i),ih_hyp]
 /--
 Transforms an exponentiation over `ZMod 2` into an `if-then-else` expression.
 Since `v ∈ ZMod 2` can only be `0` or `1`, `x^v` is `1` if `v = 0` and `x` if `v ≠ 0`.
 -/
-lemma pow_eq_ite_zmod_two (x : ℚ) (v : ZMod 2) :
-    x ^ ZMod.val v = if v ≠ 0 then x else 1 := by
+lemma pow_eq_ite_zmod_two (x : ℚ) (v : ZMod 2) : x ^ ZMod.val v = if v ≠ 0 then x else 1 := by
   -- We split the if-statement into two cases based on the condition v ≠ 0
   split_ifs with h
   · -- Case: v ≠ 0. In ZMod 2, the only non-zero element is 1.
@@ -139,6 +137,7 @@ lemma pow_eq_ite_zmod_two (x : ℚ) (v : ZMod 2) :
 Evaluates the sum of characters over a linear code.
 If `y` is in the dual code, the sum is `2^dim`. Otherwise, it is `0`.
 -/
+--lemma 1
 lemma sum_pow_innerProd_eq (C : LinearCode (ZMod 2) n) (y : Word (ZMod 2) n) :
     ∑ z : C, (-1:ℚ)^(ZMod.val ⟪z.val, y⟫) = if y ∈ C^⊥ then (2:ℚ)^(dim C) else 0 := by
   split_ifs with h9
@@ -207,6 +206,7 @@ lemma sum_pow_innerProd_eq (C : LinearCode (ZMod 2) n) (y : Word (ZMod 2) n) :
 Evaluates the inner summation of the MacWilliams identity over the vector space.
 Transforms the sum into a product form using character properties.
 -/
+--lemma 2
 lemma sum_mul_pow_innerProd_eq (x : ℚ) (z : Word (ZMod 2) n) :
     ∑ y : Word (ZMod 2) n, (x^(‖y‖ₕ))*(-1:ℚ)^(ZMod.val ⟪z, y⟫) = ((1-x)^‖z‖ₕ)*(1+x)^(n-‖z‖ₕ) := by
   calc
@@ -252,7 +252,8 @@ lemma sum_mul_pow_innerProd_eq (x : ℚ) (z : Word (ZMod 2) n) :
     unfold hammingNorm
     congr
     have card_add_card_not :=
-    Finset.card_filter_add_card_filter_not (s := Finset.univ) (fun x => z x = 0)
+    --|{x∈S|P(x)}|+|{x∈S|¬P(x)}=|S|
+    Finset.card_filter_add_card_filter_not (s := Finset.univ) (fun x => z x = 0)--(X)(P(X))
     simp only [card_univ, Fintype.card_fin] at card_add_card_not
     exact Nat.eq_sub_of_add_eq card_add_card_not
 
