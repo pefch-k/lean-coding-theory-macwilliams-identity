@@ -113,6 +113,7 @@ lemma pow_sum_eq_prod_pow (y z : Word (ZMod 2) n) (s : Finset (Fin n)) :
   · rename_i a_elem s_set ha_not_in ih_hyp
     rw [Finset.sum_insert ha_not_in, Finset.prod_insert ha_not_in,
     pow_add_eq_pow_mul_pow_zmod_two (z a_elem * y a_elem) (∑ i ∈ s_set, z i * y i),ih_hyp]
+lemma pow_dim_ne_zero {C : LinearCode R n} : (2:ℚ)^(dim C) ≠ 0 := by positivity
 /--
 Transforms an exponentiation over `ZMod 2` into an `if-then-else` expression.
 Since `v ∈ ZMod 2` can only be `0` or `1`, `x^v` is `1` if `v = 0` and `x` if `v ≠ 0`.
@@ -264,12 +265,12 @@ Relates the weight enumerator polynomial of a linear code to the weight enumerat
 theorem macwilliams_identity_binary (C : LinearCode (ZMod 2) n) (x : ℚ) (hx : x ≠ -1) :
     (weightEnumerator (C^⊥)).eval x = (1/((2:ℚ)^(dim C)))*((1+x)^n)*(W_[C]).eval ((1-x)/(1+x)) := by
   -- Define the core character sum function used to bridge the primal and dual spaces
-  let sum_weight_char (C : LinearCode (ZMod 2) n) (x : ℚ) : ℚ :=
+  let sum_weight_char {C : LinearCode (ZMod 2) n} (x : ℚ) : ℚ :=
     ∑ z : C, ∑ y : Word (ZMod 2) n, x^‖y‖ₕ * (-1:ℚ)^(ZMod.val ⟪z.val, y⟫)
   have h_add_one_ne_zero : (1 + x) ≠ 0 := by intro h; exact hx (by linarith)
   -- Step 1: Relate the character sum to the primal code C
-  have sum_eq_primal : sum_weight_char C x = ((1+x)^n) * (W_[C]).eval ((1-x)/(1+x)) := calc
-    sum_weight_char C x
+  have sum_eq_primal : sum_weight_char x = ((1+x)^n) * (W_[C]).eval ((1-x)/(1+x)) := calc
+    sum_weight_char x
       = ∑ z : C, ∑ y : Word (ZMod 2) n, x ^ ‖y‖ₕ * (-1:ℚ) ^ (ZMod.val ⟪z.val, y⟫) := rfl
     _ = ∑ z : C, (1-x) ^ ‖z.val‖ₕ * (1+x) ^ (n - ‖z.val‖ₕ) := by
       apply Finset.sum_congr rfl
@@ -292,8 +293,8 @@ theorem macwilliams_identity_binary (C : LinearCode (ZMod 2) n) (x : ℚ) (hx : 
       congr 1
       simp only [weightEnumerator,Polynomial.eval_finsetSum,Polynomial.eval_pow, Polynomial.eval_X]
   -- Step 2: Relate the character sum to the dual code C^⊥ 2o calc
-  have sum_eq_dual : sum_weight_char C x = ((2:ℚ)^(dim C)) * W_[C^⊥].eval x := calc
-    sum_weight_char C x
+  have sum_eq_dual : sum_weight_char x = ((2:ℚ)^(dim C)) * W_[C^⊥].eval x := calc
+    sum_weight_char x
       = ∑ z : C, ∑ y : Word (ZMod 2) n, x ^ ‖y‖ₕ * (-1:ℚ) ^ (ZMod.val ⟪z.val, y⟫) := rfl
     _ = ∑ y : Word (ZMod 2) n, ∑ z : C, x ^ ‖y‖ₕ * (-1:ℚ) ^ (ZMod.val ⟪z.val, y⟫) := by
      rw [Finset.sum_comm]
@@ -320,13 +321,11 @@ theorem macwilliams_identity_binary (C : LinearCode (ZMod 2) n) (x : ℚ) (hx : 
       · intro a ha
         rfl
     _ = ((2:ℚ)^(dim C)) * ∑ y : C^⊥, (x ^ ‖y.val‖ₕ) := by
-      simp_rw [mul_comm _ ((2:ℚ)^(dim C))]
-      rw [Finset.mul_sum]
+      simp_rw [mul_comm _ ((2:ℚ)^(dim C)),Finset.mul_sum]
     _ = (2:ℚ)^(dim C) * (weightEnumerator (C^⊥)).eval x := by
       congr 1
       simp only [weightEnumerator,Polynomial.eval_finsetSum, Polynomial.eval_pow, Polynomial.eval_X]
   -- Step 3: Combine primal and dual relations to solve for the dual weight enumerator
-  have pow_dim_ne_zero : (2:ℚ)^(dim C) ≠ 0 := by positivity
   calc
     W_[C^⊥].eval x
       = 1/2^(dim C) * (2^(dim C) * W_[C^⊥].eval x) := by field_simp [pow_dim_ne_zero]
@@ -352,7 +351,7 @@ def C : LinearCode (ZMod 2) 7 := Submodule.span (ZMod 2) (Set.range G)
 #check u+v
 #eval u+l
 #eval 3•v
-#eval ‖v‖-- *ΛΑΘΟΣ* δε δινει τη νορμα χαμινκ αυτο αλλα την συνηθης
+#eval ‖v‖-- *mistake* that is not hamming norm
 #eval ‖v‖ₕ
 #eval ⟪u,v⟫
 #eval ⟪v,l⟫
