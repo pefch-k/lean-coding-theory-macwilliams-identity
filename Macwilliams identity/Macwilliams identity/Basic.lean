@@ -67,7 +67,8 @@ scoped notation:100 C "^⊥" => dualCode C
 scoped notation "‖" x "‖ₕ" => hammingNorm x
 scoped notation "⟪" x "," y "⟫" => innerProd x y
 
-/-- The weight enumerator polynomial of a linear code. -/
+/-- The weight enumerator polynomial of a linear code.
+it depends on 'Polynomial.semiring', which is 'noncomputable' -/
 noncomputable def weightEnumerator (C : LinearCode R n) : Polynomial ℚ :=
   ∑ c : C, Polynomial.X ^ (‖c.val‖ₕ)
 
@@ -79,11 +80,12 @@ noncomputable instance (C : LinearCode R n) : Fintype (C^⊥) := by
 noncomputable instance (C : LinearCode R n) : DecidablePred (fun x => x ∈ C) :=
   fun x => Classical.propDecidable (x ∈ C)
 
-/-! ### Helper Lemmas for the MacWilliams Identity -/
+
 namespace LinearCode
 
 noncomputable abbrev dim (C : LinearCode R n) : ℕ := Module.finrank R C
 
+/-! ### Helper Lemmas for the MacWilliams Identity -/
 /-- The cardinality of a linear code relates to its dimension. -/
 lemma card (C : LinearCode R n) : Fintype.card C = q ^ dim C := by
   exact Module.card_eq_pow_finrank
@@ -92,7 +94,8 @@ lemma card (C : LinearCode R n) : Fintype.card C = q ^ dim C := by
 lemma add_add_cancel_zmod_two (w v : ZMod 2) : w + v + v = w := by
   fin_cases v <;> fin_cases w <;> rfl
 
-/-- Exponentiation rule for `-1` over the finite field `ZMod 2`. -/
+/-- Exponentiation rule for `-1` over the finite field `ZMod 2`. Δειχνουμε πρακτικα πως για καθε
+ισχυειγια καθε συνδιασμο επιλογων -/
 lemma pow_add_eq_pow_mul_pow_zmod_two (A B : ZMod 2) :
     (-1 : ℚ) ^ ZMod.val (A + B) = (-1 : ℚ) ^ ZMod.val A * (-1 : ℚ) ^ ZMod.val B := by
      fin_cases A <;> fin_cases B
@@ -102,10 +105,10 @@ lemma pow_add_eq_pow_mul_pow_zmod_two (A B : ZMod 2) :
       change (-1 : ℚ) ^ 1 = (-1 : ℚ) ^ 0 * (-1 : ℚ) ^ 1; norm_num
      · -- 1 + 0 = 1
       change (-1 : ℚ) ^ 1 = (-1 : ℚ) ^ 1 * (-1 : ℚ) ^ 0; norm_num
-     · -- 1 + 1 = 0 στο ZMod 2
+     · -- 1 + 1 = 0
       change (-1 : ℚ) ^ 0 = (-1 : ℚ) ^ 1 * (-1 : ℚ) ^ 1; norm_num
 
-/- Generalizes the exponentiation rule for `-1` over a `Finset` sum (-1)^(Σ a_i) = Π (-1)^(a_i)-/
+/- Generalizes the exponentiation rule for `-1` over a `Finset` sum ||(-1)^(Σ a_i) = Π (-1)^(a_i)-/
 lemma pow_sum_eq_prod_pow (y z : Word (ZMod 2) n) (s : Finset (Fin n)) :
     (-1 : ℚ) ^ ZMod.val (∑ i ∈ s, z i * y i) = ∏ i ∈ s, (-1 : ℚ) ^ ZMod.val (z i * y i) := by
   induction s using Finset.induction_on
@@ -156,7 +159,6 @@ lemma sum_pow_innerProd_eq (C : LinearCode (ZMod 2) n) (y : Word (ZMod 2) n) :
       apply h9
       simp only [dualCode, LinearMap.BilinForm.orthogonal]
       intro z hz
-      change ⟪z, y⟫ = 0
       have h_innerProd_ne_one : ⟪z, y⟫ ≠ 1 := hy_in_dual_contra z hz
       generalize ⟪z, y⟫ = v at h_innerProd_ne_one ⊢
       fin_cases v
@@ -167,13 +169,13 @@ lemma sum_pow_innerProd_eq (C : LinearCode (ZMod 2) n) (y : Word (ZMod 2) n) :
       toFun    := fun z => ⟨z.val + u, C.add_mem z.prop hu_mem⟩,
       invFun   := fun z => ⟨z.val + u, C.add_mem z.prop hu_mem⟩,
       left_inv := fun z => Subtype.ext (by
-      funext i
-      simp only [add_assoc]
-      have h_zero : z.val i + u i + u i = z.val i := add_add_cancel_zmod_two (z.val i) (u i)
-      simp only [<-Pi.add_apply] at h_zero
-      rw [add_assoc] at h_zero
-      rw[<- h_zero]
-      rfl),
+       funext i
+       simp only [add_assoc]
+       have h_zero : z.val i + u i + u i = z.val i := add_add_cancel_zmod_two (z.val i) (u i)
+       simp only [<-Pi.add_apply] at h_zero
+       rw [add_assoc] at h_zero
+       rw[<- h_zero]
+       rfl),
       right_inv := fun z => Subtype.ext (by
        funext i
        simp only [ add_assoc]
@@ -358,5 +360,12 @@ def C : LinearCode (ZMod 2) 7 := Submodule.span (ZMod 2) (Set.range G)
 #eval ⟪u,u⟫ --παραδειγμα οπου το εσωτερικου με τον ευατο δινει το 0-νικο
 example (ha : u ∈ C) (hb : v ∈ C) : u + v ∈ C := by exact C.add_mem ha hb
 #check u+l=v
+universe u v
+def p2 :=
+  ∀ {α : Type u} {β : Type v} (R : α → β → Prop),
+    (∃ x : α, ∀ y : β, R x y) → (∀ y : β, ∃ x : α, R x y)
+#check  (∀ (α : Type 1), α → α)
+#check p2
+#check @id
 end
 end InformationTheory
