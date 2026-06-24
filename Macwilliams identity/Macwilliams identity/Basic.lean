@@ -378,3 +378,4 @@ inductive Nat where
   | succ (n : Nat) : Nat
 end
 end InformationTheory
+
