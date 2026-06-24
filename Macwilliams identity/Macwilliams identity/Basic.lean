@@ -203,7 +203,7 @@ lemma sum_pow_innerProd_eq (C : LinearCode (ZMod 2) n) (y : Word (ZMod 2) n) :
       generalize innerProd z.val y = v
       fin_cases v <;> rfl
     rw [sum_eq_neg_sum] at sum_comp_equiv
-    linarith
+    exact eq_zero_of_neg_eq sum_comp_equiv --η λιγοτερα αμεσο linarith
 
 /--
 Evaluates the inner summation of the MacWilliams identity over the vector space.
@@ -220,6 +220,7 @@ lemma sum_mul_pow_innerProd_eq (x : ℚ) (z : Word (ZMod 2) n) :
     ext y
     simp only [Finset.prod_mul_distrib, LinearMap.mk₂_apply]
     congr 1
+    --x_1 στοιχεια της λεξης
     · have h_ite : (∏ x_1 : Fin n, x ^ ZMod.val (y x_1)) =
                      ∏ x_1 : Fin n, if y x_1 ≠ 0 then x else 1 := by
        apply Finset.prod_congr rfl
@@ -366,6 +367,14 @@ def p2 :=
     (∃ x : α, ∀ y : β, R x y) → (∀ y : β, ∃ x : α, R x y)
 #check  (∀ (α : Type 1), α → α)
 #check p2
+#check List (Type)
 #check @id
+#check @id (Nat)
+#check @id (String)
+#eval @id (Nat) (5)
+#eval@id (String) ("hello")
+inductive Nat where
+  | zero : Nat
+  | succ (n : Nat) : Nat
 end
 end InformationTheory
