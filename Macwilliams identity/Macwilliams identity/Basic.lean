@@ -61,17 +61,13 @@ lemma innerProd_symm (y z : Word R n) : innerProd y z = innerProd z y := by
 /-- The dual code is the orthogonal complement with respect to the inner product.
 It consists of all vectors that are orthogonal to every vector in C. -/
 def dualCode (C : LinearCode R n) : LinearCode R n := LinearMap.BilinForm.orthogonal innerProd C
+noncomputable def weightEnumerator (C : LinearCode R n) : Polynomial ℚ :=
+  ∑ c : C, Polynomial.X ^ hammingNorm c.val
 
 -- Custom notations to align the Lean code with standard coding theory literature
 scoped notation:100 C "^⊥" => dualCode C
 scoped notation "‖" x "‖ₕ" => hammingNorm x
 scoped notation "⟪" x "," y "⟫" => innerProd x y
-
-/-- The weight enumerator polynomial of a linear code.
-it depends on 'Polynomial.semiring', which is 'noncomputable' -/
-noncomputable def weightEnumerator (C : LinearCode R n) : Polynomial ℚ :=
-  ∑ c : C, Polynomial.X ^ (‖c.val‖ₕ)
-
 scoped notation "W_[" C "]" => weightEnumerator C
 
 noncomputable instance (C : LinearCode R n) : Fintype (C^⊥) := by
@@ -116,7 +112,7 @@ lemma pow_sum_eq_prod_pow (y z : Word (ZMod 2) n) (s : Finset (Fin n)) :
   · rename_i a_elem s_set ha_not_in ih_hyp
     rw [Finset.sum_insert ha_not_in, Finset.prod_insert ha_not_in,
     pow_add_eq_pow_mul_pow_zmod_two (z a_elem * y a_elem) (∑ i ∈ s_set, z i * y i),ih_hyp]
-lemma pow_dim_ne_zero {C : LinearCode R n} : (2:ℚ)^(dim C) ≠ 0 := by positivity
+lemma pow_dim_ne_zero {C : LinearCode R n} : q^(dim C) ≠ 0 := by positivity
 /--
 Transforms an exponentiation over `ZMod 2` into an `if-then-else` expression.
 Since `v ∈ ZMod 2` can only be `0` or `1`, `x^v` is `1` if `v = 0` and `x` if `v ≠ 0`.
@@ -257,7 +253,7 @@ lemma sum_mul_pow_innerProd_eq (x : ℚ) (z : Word (ZMod 2) n) :
     congr
     have card_add_card_not :=
     --|{x∈S|P(x)}|+|{x∈S|¬P(x)}=|S|
-    Finset.card_filter_add_card_filter_not (s := Finset.univ) (fun x => z x = 0)--(X)(P(X))
+    Finset.card_filter_add_card_filter_not (s := Finset.univ) (fun x => z x = 0)
     simp only [card_univ, Fintype.card_fin] at card_add_card_not
     exact Nat.eq_sub_of_add_eq card_add_card_not
 
@@ -266,15 +262,14 @@ The MacWilliams Identity for Binary Linear Codes.
 Relates the weight enumerator polynomial of a linear code to the weight enumerator of its dual.
 -/
 theorem macwilliams_identity_binary (C : LinearCode (ZMod 2) n) (x : ℚ) (hx : x ≠ -1) :
-    (weightEnumerator (C^⊥)).eval x = (1/((2:ℚ)^(dim C)))*((1+x)^n)*(W_[C]).eval ((1-x)/(1+x)) := by
+    W_[C^⊥].eval x = (1/((2:ℚ)^(dim C)))*((1+x)^n)*(W_[C]).eval ((1-x)/(1+x)) := by
   -- Define the core character sum function used to bridge the primal and dual spaces
   let sum_weight_char {C : LinearCode (ZMod 2) n} (x : ℚ) : ℚ :=
     ∑ z : C, ∑ y : Word (ZMod 2) n, x^‖y‖ₕ * (-1:ℚ)^(ZMod.val ⟪z.val, y⟫)
   have h_add_one_ne_zero : (1 + x) ≠ 0 := by intro h; exact hx (by linarith)
-  -- Step 1: Relate the character sum to the primal code C
-  have sum_eq_primal : sum_weight_char x = ((1+x)^n) * (W_[C]).eval ((1-x)/(1+x)) := calc
-    sum_weight_char x
-      = ∑ z : C, ∑ y : Word (ZMod 2) n, x ^ ‖y‖ₕ * (-1:ℚ) ^ (ZMod.val ⟪z.val, y⟫) := rfl
+  have sum_eq_primal : ∑ z : C, ∑ y : Word (ZMod 2) n, x ^ ‖y‖ₕ * (-1:ℚ) ^ (ZMod.val ⟪z.val, y⟫) =
+   ((1+x)^n) * (W_[C]).eval ((1-x)/(1+x)) :=
+   calc
     _ = ∑ z : C, (1-x) ^ ‖z.val‖ₕ * (1+x) ^ (n - ‖z.val‖ₕ) := by
       apply Finset.sum_congr rfl
       intro z _
@@ -295,10 +290,10 @@ theorem macwilliams_identity_binary (C : LinearCode (ZMod 2) n) (x : ℚ) (hx : 
     _ = ((1+x)^n) * (W_[C]).eval ((1-x)/(1+x)) := by
       congr 1
       simp only [weightEnumerator,Polynomial.eval_finsetSum,Polynomial.eval_pow, Polynomial.eval_X]
-  -- Step 2: Relate the character sum to the dual code C^⊥ 2o calc
-  have sum_eq_dual : sum_weight_char x = ((2:ℚ)^(dim C)) * W_[C^⊥].eval x := calc
-    sum_weight_char x
-      = ∑ z : C, ∑ y : Word (ZMod 2) n, x ^ ‖y‖ₕ * (-1:ℚ) ^ (ZMod.val ⟪z.val, y⟫) := rfl
+--second calc
+  have sum_eq_dual : ∑ z : C, ∑ y : Word (ZMod 2) n, x ^ ‖y‖ₕ * (-1:ℚ) ^ (ZMod.val ⟪z.val, y⟫) =
+  ((2:ℚ)^(dim C)) * W_[C^⊥].eval x :=
+  calc
     _ = ∑ y : Word (ZMod 2) n, ∑ z : C, x ^ ‖y‖ₕ * (-1:ℚ) ^ (ZMod.val ⟪z.val, y⟫) := by
      rw [Finset.sum_comm]
     _ = ∑ y : Word (ZMod 2) n, ((x ^ ‖y‖ₕ) * ∑ z : C, (-1:ℚ) ^ (ZMod.val ⟪z.val, y⟫)) := by
@@ -325,7 +320,7 @@ theorem macwilliams_identity_binary (C : LinearCode (ZMod 2) n) (x : ℚ) (hx : 
         rfl
     _ = ((2:ℚ)^(dim C)) * ∑ y : C^⊥, (x ^ ‖y.val‖ₕ) := by
       simp_rw [mul_comm _ ((2:ℚ)^(dim C)),Finset.mul_sum]
-    _ = (2:ℚ)^(dim C) * (weightEnumerator (C^⊥)).eval x := by
+    _ = (2:ℚ)^(dim C) * W_[C^⊥].eval x := by
       congr 1
       simp only [weightEnumerator,Polynomial.eval_finsetSum, Polynomial.eval_pow, Polynomial.eval_X]
   -- Step 3: Combine primal and dual relations to solve for the dual weight enumerator
@@ -336,46 +331,4 @@ theorem macwilliams_identity_binary (C : LinearCode (ZMod 2) n) (x : ℚ) (hx : 
     _ = 1/2^(dim C) * (1+x)^n * (W_[C]).eval ((1-x)/(1+x)) := by ring
 
 end LinearCode
-
-/-! ### Concrete Examples (Sanity Checks) -/
-section
-def u : Word (ZMod 2) 7 := ![1, 1, 1, 1, 0, 0, 0]
-def v : Word (ZMod 2) 7 := ![0, 0, 0, 0, 1, 1, 1]
-def l : Word (ZMod 2) 7 := ![1, 1, 1, 1, 1, 1, 1]
-def l1 : ZMod 2 := v 4
-def l3 : ZMod 2 := v 3
-def G : Fin 2 → Word (ZMod 2) 7 := ![u, v]
-lemma gen_indep : LinearIndependent (ZMod 2) G := by rw [Fintype.linearIndependent_iff]; decide
-def C : LinearCode (ZMod 2) 7 := Submodule.span (ZMod 2) (Set.range G)
-
-#eval l1
-#eval l3
-#check 2 • v
-#check u+v
-#eval u+l
-#eval 3•v
-#eval ‖v‖-- *mistake* that is not hamming norm
-#eval ‖v‖ₕ
-#eval ⟪u,v⟫
-#eval ⟪v,l⟫
-#eval ⟪u,u⟫ --παραδειγμα οπου το εσωτερικου με τον ευατο δινει το 0-νικο
-example (ha : u ∈ C) (hb : v ∈ C) : u + v ∈ C := by exact C.add_mem ha hb
-#check u+l=v
-universe u v
-def p2 :=
-  ∀ {α : Type u} {β : Type v} (R : α → β → Prop),
-    (∃ x : α, ∀ y : β, R x y) → (∀ y : β, ∃ x : α, R x y)
-#check  (∀ (α : Type 1), α → α)
-#check p2
-#check List (Type)
-#check @id
-#check @id (Nat)
-#check @id (String)
-#eval @id (Nat) (5)
-#eval@id (String) ("hello")
-inductive Nat where
-  | zero : Nat
-  | succ (n : Nat) : Nat
-end
 end InformationTheory
-
